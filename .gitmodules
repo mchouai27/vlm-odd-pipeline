@@ -1,0 +1,8 @@
+[submodule "ui/review_raw"]
+	path = ui/review_raw
+	url = https://github.com/ayush939/Data-Labelling-GUI.git
+	branch = main
+[submodule "ui/review_flags"]
+	path = ui/review_flags
+	url = https://github.com/ayush939/Data-Labelling-GUI.git
+	branch = v2
