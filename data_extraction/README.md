@@ -4,6 +4,8 @@ Script: `data_extraction/make_requests_jsonl.py`
 Generates a **JSONL** file where **each line** is a complete `POST /v1/chat/completions` request for a Vision-Language Model (VLM).  
 For every nuScenes sample, it embeds a **text prompt** (augmented with location/driving side) and **base64 images** from selected cameras.
 
+> **Concrete example:** see `examples/original_requests.example.jsonl` in this repo for how lines look in practice.
+
 ---
 
 ## What it does
@@ -14,6 +16,19 @@ For every nuScenes sample, it embeds a **text prompt** (augmented with location/
 - Injects **country** and **driving side** (left/right) into your prompt **after a sentinel substring**.
 - Writes one request per line to `original_requests.jsonl` (or your chosen `--out` path).
 - Adds a stable `custom_id` → `sceneToken__sampleToken`.
+
+---
+
+## Requirements
+
+- Python 3.8+
+- `nuscenes-devkit` (installed and dataset available locally)
+- `tqdm` (optional; script falls back gracefully if missing)
+
+Install:
+```bash
+pip install nuscenes-devkit tqdm
+````
 
 ---
 
@@ -97,7 +112,7 @@ Each line is a valid JSON object like:
 }
 ```
 
-> You can change the `"model"` inside the script if needed.
+> **See a real example line:** `examples/original_requests.example.jsonl`.
 
 ---
 
@@ -133,8 +148,6 @@ python data_extraction/make_requests_jsonl.py \
   --out original_requests.jsonl
 ```
 
-2. Submit via your Batch API tooling (see `batch/submit_batches.py` in this repo), then monitor, retrieve, and clean.
+2. Submit via your Batch API tooling (see `batch/submit_batches.py`), monitor, retrieve, and clean.
 
 
-::contentReference[oaicite:0]{index=0}
-```
