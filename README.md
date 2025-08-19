@@ -12,26 +12,24 @@ End-to-end pipeline to generate, batch, clean, and validate **Operational Design
 flowchart TB
   %% Nodes
   NUSC[NuScenes database]
-  EXTRACT["Extract images and metadata"]
-  THREE["Use three images (front, front-left, front-right) + text prompt"]
-  VLM["Process with VLM (GPT-4o)"]
-  ODD["Structured ODD JSON"]
-  PREP["Automatic preprocessing and normalization"]
-  SEM["Semantic checks: cross-camera consistency and scene coherence"]
-  GUI1["GUI #1 (REQUIRED): manual verification of first sample (temporal anchor)"]
-  GUI2["GUI #2 (REQUIRED): manual review of all flagged items (anything not OK)"]
-  EXPERT["Expert assessment of traffic sign detection"]
-  FINAL["Finalize dataset"]
+  EXTRACT[make_requests_jsonl.py]
+  SUBMIT[submit_batches.py]
+  RETRIEVE[retrieve_clean_results.py]
+  PREP[preprocess_normalize.py]
+  GUI1[review_raw]
+  SEM[semantic_scene_consistency.py]
+  GUI2[review_flags]
+  EXPERT[Expert assessment of traffic sign detection]
+  FINAL[Finalize dataset]
 
   %% Groups (no internal edges)
   subgraph data_extraction
     EXTRACT
-    THREE
   end
 
   subgraph batch
-    VLM
-    ODD
+    SUBMIT
+    RETRIEVE
   end
 
   subgraph processing
@@ -44,21 +42,11 @@ flowchart TB
     GUI2
   end
 
-  %% Main flow (as requested)
-  NUSC --> EXTRACT
-  EXTRACT --> THREE
-  THREE --> VLM
-  VLM --> ODD
-  ODD --> PREP
-  PREP --> GUI1
-  GUI1 --> SEM
-  SEM --> GUI2
-  GUI2 --> FINAL
+  %% Main flow with file-to-file relations
+  NUSC --> EXTRACT --> SUBMIT --> RETRIEVE --> PREP --> GUI1 --> SEM --> GUI2 --> FINAL
 
   %% Additional connection
-  NUSC --> EXPERT
-  EXPERT --> FINAL
-
+  NUSC --> EXPERT --> FINAL
 
 ```
 **GUIs are required.**
