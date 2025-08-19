@@ -35,14 +35,13 @@ flowchart TB
   end
 
   subgraph "ui"
-    GUI1 --> GUI2
   end
 
   %% Main pipeline flow (corrected order)
   NUSC --> EXTRACT --> THREE --> VLM --> ODD --> PREP --> GUI1 --> SEM --> GUI2 --> FINAL
 
   %% Additional connections
-  GUI1 --> EXPERT --> FINAL
+  EXPERT --> FINAL
   NUSC --> EXPERT
 ```
 **GUIs are required.**
