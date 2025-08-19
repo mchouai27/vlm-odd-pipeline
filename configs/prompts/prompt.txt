@@ -1,1 +1,292 @@
-'"$@"'
+You are tasked with analyzing the operational design domain (ODD) of an automated driving system (ADS) based on three provided images captured at the same time from different vehicle camera angles. The images are from the following perspectives, they are provided in the following order:
+- CAM_FRONT_LEFT  
+- CAM_FRONT
+- CAM_FRONT_RIGHT  
+Use the categories below to describe the observable details in the images, formatted strictly as a JSON object. Include all listed fields in the JSON output. For any elements that are not present in the images, mark them as "No". Ensure that the response is valid JSON and follows the exact structure provided.
+
+Example Output:
+{
+  "Scenery": {
+    "Zones": {
+      "GeoFencedAreas": "Yes, No",
+      "TrafficManagementZones": "Yes, No",
+      "SchoolZones": "Yes, No",
+      "RegionsOrStates": "Yes, No",
+      "InterferenceZones": "Yes, No"
+    },
+    "DrivableArea": {
+      "DrivableAreaType": {
+        "Motorways": "Yes, No",
+        "RadialRoads": "Yes, No",
+        "DistributorRoads": "Yes, No",
+        "MinorRoads": "Yes, No",
+        "SlipRoads": "Yes, No",
+        "Parking": "Yes, No",
+        "SharedSpace": "Yes, No"
+      },
+      "DrivableAreaGeometry": {
+        "HorizontalPlane": "Straight, Curved (gentle or sharp), No",
+        "TransversePlane": {
+          "Divided": "Yes, No",
+          "Undivided": "Yes, No",
+          "Pavements": "Yes, No",
+          "BarriersOnEdges": "Yes, No"
+        },
+        "LongitudinalPlane": {
+          "UpSlope": "Yes, No",
+          "DownSlope": "Yes, No",
+          "LevelPlane": "Yes, No"
+        }
+      },
+      "LaneSpecification": {
+        "NumberOfLanes": "number of lanes, No",
+        "LaneNarrow": "Yes, No",
+        "LaneType": {
+          "BusLane": "Yes, No",
+          "TrafficLane": "Yes, No",
+          "CycleLane": "Yes, No",
+          "TramLane": "Yes, No",
+          "EmergencyLane": "Yes, No",
+          "SpecialPurposeLane": "Yes, No"
+        }
+      },
+       "DrivableAreaSigns": {
+            "RegulatorySigns": [
+              {"Sign": "...", "TimeOfOperation": "Full-time, Part-time"}, // Indicates more signs if they exist
+            ],
+            "WarningSigns": [
+              {"Sign": "...", "TimeOfOperation": "Full-time, Part-time"}, // Indicates more signs if they exist
+            ],
+            "InformationSigns": [
+              {"Sign": "...", "TimeOfOperation": "Full-time, Part-time"},// Indicates more signs if they exist
+            ]
+    },
+      "DrivableAreaEdge": {
+        "LineMarkers": "Yes, No",
+        "ShoulderPaved": "Yes, No",
+        "ShoulderGrass": "Yes, No",
+        "SolidBarriers": "Yes, No",
+        "TemporaryLineMarkers": "Yes, No"
+      },
+      "DrivableAreaSurface": {
+        "SurfaceType": {
+          "Loose": "Yes, No",
+          "Segmented": "Yes, No",
+          "Uniform": "Yes, No"
+        },
+        "SurfaceFeatures": {
+          "Cracks": "Yes, No",
+          "Potholes": "Yes, No",
+          "Ruts": "Yes, No",
+          "Swells": "Yes, No"
+        },
+        "InducedSurfaceConditions": {
+          "Icy": "Yes, No",
+          "Flooded": "Yes, No",
+          "Mirage": "Yes, No",
+          "StandingWater": "Yes, No",
+          "WetRoad": "Yes, No",
+          "SurfaceContamination": "Yes, No"
+        }
+      }
+    },
+    "Junctions": {
+    "Roundabouts": {
+      "Normal": {
+        "Presence": "Yes, No",
+        "Signalized": "Yes, No"
+      },
+      "Mini": {
+        "Presence": "Yes, No",
+        "Signalized": "Yes, No"
+      }
+    }
+    },
+      "Intersections": {
+        "TJunctions": "Yes, No",
+        "Staggered": "Yes, No",
+        "YJunction": "Yes, No",
+        "Crossroads": "Yes, No",
+        "GradeSeparated": "Yes, No"
+      }
+    "SpecialStructures": {
+      "AutomaticAccessControl": "Yes, No",
+      "Bridges": "Yes, No",
+      "PedestrianCrossings": "Yes, No",
+      "RailCrossings": "Yes, No",
+      "Tunnels": "Yes, No",
+      "TollPlaza": "Yes, No"
+    },
+    "FixedRoadStructures": {
+      "Buildings": "Yes, No",
+      "StreetLights": "Yes, No",
+      "StreetFurniture": "Yes, No",
+      "Vegetation": "Yes, No"
+    },
+    "TemporaryRoadStructures": {
+      "ConstructionSiteDetours": "Yes, No",
+      "RefuseCollection": "Yes, No",
+      "RoadWorks": "Yes, No",
+      "TemporaryRoadSignage": "Yes, No"
+    }
+  },
+  "EnvironmentalConditions": {
+    "Weather": {
+      "Snowfall": {
+        "Visibility": "LightSnow, ModerateSnow, HeavySnow"
+      },
+      "Rainfall": {
+        "Visibility": "LightRain, ModerateRain, HeavyRain"
+      }
+    },
+    "Particulates": {
+      "Marine": "Yes, No",
+      "NonPrecipitatingWaterDroplets": "Yes, No",
+      "SandAndDust": "Yes, No",
+      "SmokeAndPollution": "Yes, No",
+      "VolcanicAsh": "Yes, No"
+    },
+    "Illumination": {
+      "Day": "Yes, No",
+      "Night": "Yes, No",
+      "Cloudiness": {
+        "Clear": "Yes, No",
+        "PartlyCloudy": "Yes, No",
+        "Overcast": "Yes, No"
+      },
+      "ArtificialIllumination": "Yes, No"
+    }
+  },
+  "DynamicElements": {
+    "Traffic": {
+      "DensityOfAgents": "High, Medium, Low",
+      "VolumeOfTraffic": "High, Medium, Low",
+      "FlowRate": "Smooth, Congested"
+    }
+  }
+}
+
+Explanations and Examples
+1. Scenery Zones
+1.1 GeoFencedAreas: Areas restricted by a virtual boundary where the ADS is allowed to operate, defined using GPS or other mapping technologies.
+1.2 TrafficManagementZones: Zones with specific traffic regulations, such as congestion charging zones, low-emission zones, or toll plazas.
+1.3 SchoolZones: Areas near schools with safety-focused rules, such as reduced speed limits and increased pedestrian warnings.
+1.4 RegionsOrStates: Administrative boundaries (e.g., states, provinces) or operational regions where the ADS is certified to function.
+1.5 InterferenceZones: Zones with potential signal or sensor interference, such as dense urban areas, tunnels, or locations with heavy foliage.
+
+2. Drivable Area
+2.1 DrivableAreaType:
+2.1.1 Motorways: High-capacity roads limited to motorized vehicles with higher speed limits.
+2.1.2 RadialRoads: Major roads (A-roads) that connect motorways to urban centers or distributor roads.
+2.1.3 DistributorRoads: Secondary roads (B-roads) connecting radial roads to smaller, local streets.
+2.1.4 MinorRoads: Low-capacity roads serving residential or local areas.
+2.1.5 SlipRoads: Ramps connecting different road levels or types.
+2.1.6 Parking: Designated areas for stopping and parking vehicles.
+2.1.7 SharedSpace: Mixed-use zones shared between vehicles, pedestrians, and cyclists.
+
+2.2 DrivableAreaGeometry:
+2.2.1 HorizontalPlane: The road’s layout when viewed from above (e.g., straight or curved).
+2.2.2 TransversePlane: The cross-sectional profile of the road, including shoulders and dividers.
+2.2.2.1 Divided: Indicates if the road has a physical separation, such as a median, between lanes going in opposite directions.
+2.2.2.2 Undivided: Refers to a road where traffic in both directions shares the same surface, without any physical separation.
+2.2.2.3 Pavements: Describes the presence or absence of pedestrian walkways or sidewalks along the road.
+2.2.2.4 BarriersOnEdges: Highlights whether the road edges have safety barriers or guardrails to prevent vehicles from leaving the roadway.
+2.2.3 LongitudinalPlane: The vertical road profile, including slopes and level sections.
+2.2.3.1 UpSlope: Represents an incline where the road rises in elevation.
+2.2.3.2 DownSlope: Refers to a decline where the road descends in elevation.
+2.2.3.3 LevelPlane: Denotes sections of the road that are flat and have no significant slope.
+
+2.3 LaneSpecification:
+2.3.1 NumberOfLanes: Total lanes available for vehicle use.
+2.3.2 LaneNarrow: Whether lanes are below standard width.
+2.3.3 LaneType:
+2.3.3.1 BusLane: Reserved for buses.
+2.3.3.2 TrafficLane: General-purpose lanes.
+2.3.3.3 CycleLane: Reserved for bicycles.
+2.3.3.4 TramLane: Designated for tram use.
+2.3.3.5 EmergencyLane: Used for emergencies or breakdowns.
+2.3.3.6 SpecialPurposeLane: Reserved for specific uses like carpooling.
+
+2.4 DrivableAreaSigns: Focus on detecting only road signs close to the cameras or car in this location, ensuring they are relevant to the vehicle's immediate driving environment. Only detect signs that are clearly visible in the image. If no sign is visible, return an empty list. Do not infer the presence of a sign unless it is explicitly visible. If uncertain, do not include it. Signs should match standard road sign designs. Avoid detecting shapes, texts, or objects that resemble signs but are not actual road signs.
+2.4.1 RegulatorySigns: Mandatory rules such as stop signs or speed limits, if they exist in the images.
+2.4.2 WarningSigns: Alerts for hazards like sharp turns or slippery roads, if they exist in the images.
+2.4.3 InformationSigns: General guidance, such as directions or distances, if they exist in the images.
+2.4.4 TimeOfOperation: Each sign may have a specific operational period, whether signs apply full-time or only part-time.
+
+2.5 DrivableAreaEdge:
+2.5.1 LineMarkers: Markings that define lane or road boundaries.
+2.5.2 ShoulderPaved: Paved areas beside the roadway.
+2.5.3 ShoulderGrass: Grass or natural areas beside the roadway.
+2.5.4 SolidBarriers: Physical obstructions like railings or walls.
+2.5.5 TemporaryLineMarkers: Temporary markings for detours or construction.
+
+2.6 DrivableAreaSurface:
+2.6.1 SurfaceType:
+2.6.1.1 Loose: Refers to road surfaces composed of unbound materials that are not compacted or paved, e.g. gravel, earth, sand.
+2.6.1.2 Segmented: Surfaces composed of individual, distinct sections or units joined together to form the drivable surface, e.g. Concrete slabs, cobblestones, or other modular surface elements.
+2.6.1.3 Uniform: ontinuous, smooth surfaces like asphalt or polished concrete, providing seamless driving conditions.
+2.6.2 SurfaceFeatures:
+2.6.2.1 Cracks: Visible damage on the surface.
+2.6.2.2 Potholes: Depressions caused by wear or damage.
+2.6.2.3 Ruts: Grooves formed by repeated vehicle use.
+2.6.2.4 Swells: Raised sections of the road.
+2.6.3 InducedSurfaceConditions:
+2.6.3.1 Icy: Roads covered in ice.
+2.6.3.2 Flooded: Roads submerged in water.
+2.6.3.3 Mirage: Optical illusions from surface heat.
+2.6.3.4 StandingWater: Pools of water on the road.
+2.6.3.5 WetRoad: General wet conditions.
+2.6.3.6 SurfaceContamination: Debris like oil, mud, or leaves.
+
+Junctions
+3.1 Roundabouts:
+3.1.1: Normal, Mini: Types of roundabouts based on size and complexity.
+3.1.2 Signalized: Whether traffic lights control the roundabout.
+3.2 Intersections:
+3.2.1 TJunctions: T-shaped road intersections.
+3.2.2 Staggered: Offset intersections.
+3.2.3 YJunction: Y-shaped road intersections.
+3.2.4 Crossroads: Standard four-way intersections.
+3.2.5 GradeSeparated: Intersections with different elevation levels.
+
+SpecialStructures
+4.1 AutomaticAccessControl: Gates or barriers restricting access.
+4.2 Bridges: Elevated roadways over obstacles like rivers or roads.
+4.3 PedestrianCrossings: Areas designated for pedestrian crossing.
+4.4 RailCrossings: Intersections with railway tracks.
+4.5 Tunnels: Enclosed passages for vehicles.
+4.6 TollPlaza: Stations for collecting tolls.
+
+FixedRoadStructures
+5.1 Buildings: Structures adjacent to or affecting the road environment.
+5.2 StreetLights: Lighting structures for illumination.
+5.3 StreetFurniture: Items like benches or bollards.
+5.4 Vegetation: Trees and plants affecting visibility or road conditions.
+
+TemporaryRoadStructures
+6.1 ConstructionSiteDetours: Temporary rerouted roads created to bypass areas under construction, ensuring traffic flow while work is ongoing.
+6.2 RefuseCollection: Temporary obstructions from waste removal.
+6.3 RoadWorks: Areas under repair.
+6.4 TemporaryRoadSignage: Signs placed temporarily for guidance.
+
+EnvironmentalConditions
+7.1 Weather:
+7.1.1 Snowfall: Snow Intensity affecting visibility (light, moderate, heavy).
+7.1.2 Rainfall: Rain Intensity affecting visibility (light, moderate, heavy).
+7.2 Particulates:
+7.2.1 Marine: Coastal haze or salt spray.
+7.2.2 NonPrecipitatingWaterDroplets: Mist or fog affecting visibility.
+7.2.3 SandAndDust: Windblown particles.
+7.2.4 SmokeAndPollution: Airborne pollutants.
+7.2.5 VolcanicAsh: Hazardous ash from volcanic eruptions.
+7.3 Illumination:
+7.3.1 Day: Sunlight conditions.
+7.3.2 Night: Low-light conditions.
+7.3.3 Cloudiness: Levels of sky cover affecting lighting.
+7.3.4 ArtificialIllumination: Light from streetlights or vehicles.
+
+DynamicElements
+8.1 Traffic:
+8.1.1 DensityOfAgents: The concentration of vehicles or road users in an area.
+8.1.2 VolumeOfTraffic: Total number of vehicles passing a point over time.
+8.1.3 FlowRate: Traffic movement quality (e.g., smooth, congested).
