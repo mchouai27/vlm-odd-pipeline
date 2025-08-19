@@ -1,162 +1,241 @@
 # VLM ODD Pipeline
 
-End-to-end pipeline to generate, batch, clean, and validate **Operational Design Domain (ODD)** annotations using **Vision-Language Models (VLMs)**.
+End-to-end pipeline to generate, batch, clean, and validate **Operational Design Domain (ODD)** annotations from nuScenes using **Vision-Language Models (VLMs)**.
 
-## What’s inside
+---
 
-- **Data extraction**: build `original_requests.jsonl` from nuScenes (select cameras, base64 images, prompt injection).
-- **VLM integration**: prompts in `configs/`, batch submission + monitoring + iterative resubmission on invalid JSON.
-- **Result handling**: combined raw JSONL + cleaned `{custom_id: parsed_json|raw_text|error}`.
-- **Preprocessing**: categorical cleanup (Yes/No/Maybe), lane normalization, rainfall/density mapping.
-- **Semantic checks**: scene-level coherence (toggle spikes, lane jumps, cloudiness transitions, construction logic).
-- **GUIs (optional)**: manual review tools for raw outputs and for triaging semantic flags under `ui/`.
-- **Notebooks**: runnable examples that mirror the scripts.
+## Pipeline at a glance
 
-## Repo structure
+> Rendered directly via Mermaid (works on GitHub).
+
+```mermaid
+flowchart TB
+  %% --- Nodes ---
+  NUSC[NuScenes Database]
+  EXTRACT[Extract images & metadata]
+  THREE[Use 3 images<br/>(front, front-left, front-right)<br/>+ text prompt]
+  VLM[Process with VLM (GPT‑4o)]
+  ODD[Generate structured ODD JSON]
+  PREP[Automatic Preprocessing & Normalization]
+  GUI1[[GUI #1 (REQUIRED):<br/>Manual verification of first sample<br/>(temporal anchor)]]
+  SEM[Semantic checks:<br/>Consistency Across Cameras<br/>Scene Coherence]
+  GUI2[[GUI #2 (REQUIRED):<br/>Manual review of all flagged items<br/>(anything not 'OK')]]
+  FINAL[Finalize dataset & confirm accuracy]
+  EXPERT[Expert Assessment of Traffic Sign Detection]
+
+  %% --- Groups (visual) ---
+  subgraph data_extraction
+    EXTRACT --> THREE
+  end
+  subgraph batch
+    THREE --> VLM --> ODD
+  end
+  subgraph processing
+    PREP --> SEM
+  end
+  subgraph ui
+    GUI1 --> GUI2
+  end
+
+  %% --- Flow ---
+  NUSC --> EXTRACT --> THREE --> VLM --> ODD --> PREP --> GUI1 --> SEM --> GUI2 --> FINAL
+  GUI1 --> EXPERT --> FINAL
+```
+
+**GUIs are required.**  
+- **GUI #1**: Verify the **first frame per scene** to anchor temporal consistency.  
+- **GUI #2**: Review and relabel all items **flagged** by automatic checks.
+
+---
+
+## Quickstart
+
+**0) Download nuScenes (official website).** Get the **trainval** split and extract locally. You’ll pass `--dataroot` to scripts below.
+
+**1) Build requests JSONL**
+```bash
+python data_extraction/make_requests_jsonl.py   --dataroot /path/to/nuscenes   --prompt configs/prompts/prompt.txt   --output original_requests.jsonl
+```
+
+**2) Submit batches iteratively (generic paths)**
+```bash
+python batch/submit_batches.py   --base-dir <out_dir_for_iterations>   --original-requests original_requests.jsonl
+```
+
+**3) Monitor batches (generic paths)**
+```bash
+python batch/monitor_batches.py   --ids <path_to_submitted_batch_ids.txt>   --stop-when-done
+```
+
+**4) Retrieve & clean results**
+```bash
+# Single IDs file:
+python batch/retrieve_clean_results.py   --ids <path_to_submitted_batch_ids.txt>   --combined <combined_results.jsonl>   --cleaned <corrected_results.json>
+
+# Or collect across multiple iterations:
+python batch/collect_iteration_results.py   --base-dir <out_dir_for_iterations>
+```
+
+**5) GUI #1 — Manual verification of first sample (REQUIRED)**
+```bash
+cd ui/review_raw
+pip install -r requirements.txt
+streamlit run app.py --   --input <corrected_results.json>   --out <raw_overrides.json>
+```
+
+**6) Automatic Preprocessing & Normalization**
+```bash
+python processing/preprocess_normalize.py   --input <annotations.csv>   --output <cleaned_annotations.csv>   --report <checks_report.json>
+```
+
+**7) Semantic checks (scene coherence)**
+```bash
+python processing/semantic_scene_consistency.py   --input <cleaned_annotations.csv>   --output <with_semantic_flags.csv>   --report <semantic_flags_report.json>   --scene-col Scene
+```
+
+**8) GUI #2 — Manual review of flagged items (REQUIRED)**
+```bash
+cd ui/review_flags
+pip install -r requirements.txt
+streamlit run app.py --   --input <with_semantic_flags.csv>   --out <flag_overrides.csv>
+```
+
+**9) Finalize dataset**
+- Apply overrides from both GUIs to produce the final consistent dataset.
+
+---
+
+## Repository structure
 
 ```
-vlm-odd-pipeline/
+.
 ├─ README.md
-├─ LICENSE
 ├─ requirements.txt
-├─ .gitignore
-├─ .env.example              # OPENAI_API_KEY=...
 │
 ├─ configs/
 │  └─ prompts/
 │     └─ prompt.txt
 │
 ├─ data_extraction/
-│  ├─ make_requests_jsonl.py
-│  └─ README.md
+│  ├─ README.md
+│  └─ make_requests_jsonl.py
 │
 ├─ batch/
-│  ├─ submit_batches.py
+│  ├─ README.md
+│  ├─ collect_iteration_results.py
 │  ├─ monitor_batches.py
 │  ├─ retrieve_clean_results.py
-│  ├─ collect_iteration_results.py     # optional
-│  └─ README.md
+│  ├─ submit_batches.py
+│  └─ docs/
+│     ├─ COLLECT.md
+│     ├─ MONITORING.md
+│     └─ RETRIEVE.md
 │
 ├─ processing/
+│  ├─ README.md
 │  ├─ preprocess_normalize.py
 │  └─ semantic_scene_consistency.py
 │
-├─ ui/                                 # optional GUIs (git submodules recommended)
-│  ├─ review_raw/      # GUI #1: manual review of raw corrected JSON
-│  └─ review_flags/    # GUI #2: triage rows flagged by semantic checks
-│
-├─ notebooks/
-│  ├─ 01_data_extraction.ipynb
-│  ├─ 02_batch_submit_monitor.ipynb
-│  ├─ 03_results_retrieval_cleaning.ipynb
-│  ├─ 04_preprocess_normalize.ipynb
-│  └─ 05_semantic_checks.ipynb
+├─ ui/
+│  ├─ review_raw/
+│  │  ├─ README.md
+│  │  ├─ app.py
+│  │  ├─ config.json
+│  │  ├─ requirements.txt
+│  │  ├─ Validation Guide.pdf
+│  │  └─ utils.py
+│  └─ review_flags/
+│     ├─ README.md
+│     ├─ app.py
+│     ├─ config.json
+│     ├─ requirements.txt
+│     ├─ Validation Guide.pdf
+│     └─ utils.py
 │
 └─ examples/
    └─ original_requests.example.jsonl
 ```
 
-## Requirements
+---
 
-- Python 3.8+
-- `pip install -r requirements.txt`
+## Methodology
 
-```
-requests>=2.32
-pandas>=2.2
-numpy>=1.26
-tqdm>=4.66
-nuscenes-devkit>=1.1
-```
+Our approach follows a structured pipeline for processing nuScenes images and metadata with a Vision‑Language Model (VLM).
 
-Set your API key (don’t hard-code it):
+### Data Preprocessing
 
-```bash
-cp .env.example .env   # fill OPENAI_API_KEY
-# or
-export OPENAI_API_KEY="sk-..."
-```
+- Extract images and metadata from the nuScenes database.
+- Use three images (front, front‑left, front‑right) together with a text prompt.
 
-## Quickstart (end-to-end)
+### Processing with Vision‑Language Model (VLM)
 
-1) **Build requests JSONL** from nuScenes:
+- Feed the selected images and prompt into the VLM (**GPT‑4o**).  
+- GPT‑4o is chosen for strong multimodal reasoning—integrating visual inputs with natural‑language context to produce accurate, semantically rich descriptions useful for ODD construction.
 
-```bash
-python data_extraction/make_requests_jsonl.py   --dataroot /path/to/nuscenes   --prompt configs/prompts/prompt.txt   --output original_requests.jsonl
-```
+### Validation Steps
 
-2) **Submit batches iteratively** (creates `Cleaned_results/iteration_*` and resubmits invalids until clean):
+To deliver consistent, high‑quality scene annotations we combine **automatic** correction with **manual** verification:
 
-```bash
-python batch/submit_batches.py   --base-dir Cleaned_results   --original-requests original_requests.jsonl
-```
+- **Automatic Preprocessing and Normalization**  
+  Applied to all frame‑level annotations to improve logical and temporal consistency by:  
+  (i) normalising binary fields to remove contradictory/unclear answers,  
+  (ii) standardising uncertain or partial expressions,  
+  (iii) consolidating categorical values, and  
+  (iv) explicitly marking rare/structurally absent features as negative.  
+  The output becomes the input to manual verification.
 
-3) **(Optional) Monitor**:
+- **Manual Verification of First Sample (required)**  
+  For each scene, the first frame is manually checked to confirm ODD parameters (e.g., road type, weather).  
+  This sample acts as a **temporal anchor** for subsequent consistency checks.
 
-```bash
-python batch/monitor_batches.py   --ids Cleaned_results/iteration_1/submitted_batch_ids_iteration_1.txt   --stop-when-done
-```
+#### Automatic Annotation Correction and Consistency Checks
 
-4) **Retrieve + clean** (single IDs file) *or* **collect across iterations**:
+After preprocessing and the first manual check, we apply a dedicated automated pipeline with two stages: **Temporal Smoothing** and **Logical Validation**.
 
-```bash
-# single IDs file
-python batch/retrieve_clean_results.py   --ids submitted_batch_ids.txt   --combined batch_results_combined.jsonl   --cleaned corrected_results.json
+**Temporal Smoothing.**  
+Treat each scene as a time sequence for categorical/binary labels (e.g., `Potholes`, `LaneNarrow`, `StreetLights`). Short isolated spikes (a single *Yes* sandwiched by *No*s, or vice‑versa) are corrected by two hyperparameters *n* and *m*: segments with length `< n` are flipped to match neighbours; segments with `n ≤ length < m` are retained but passed to logical validation.
 
-# per-iteration walker
-python batch/collect_iteration_results.py   --base-dir Cleaned_results   [--overwrite]
-```
+**Logical Validation.**  
+Rule‑based checks catch semantic/structural issues (per PAS ODD guidance):
+- **Temporal anomalies:** e.g., “Immediate entry/exit”. Short segments (`< n`) are already flipped; `n ≤ length < m` are flagged.
+- **Cross‑field inconsistencies:** e.g., `Divided` and `Undivided` cannot both be *Yes*.
+- **Scene logic rules:** e.g., `RoadWorks` should be supported by `TemporaryRoadSignage` or `TemporaryLineMarkers`.
+- **Environmental transitions:** e.g., direct `Clear → Overcast` must pass through `PartlyCloudy` (except brief detours).
 
-5) **(Optional) GUI #1 – manual review of raw outputs**:
+Each ODD parameter receives a status such as `OK`, `Sudden lane change`, `Illumination inconsistency`, etc., to drive manual triage and filtering.
 
-```bash
-cd ui/review_raw
-# e.g., streamlit run app.py  (see the GUI's own README for exact arguments)
-```
+**Second Manual Review (required).**  
+All parameters **flagged** with any status other than `OK` are reviewed and, if needed, re‑labelled to resolve subtle context‑dependent cases via human judgement.
 
-6) **Preprocess & normalize** (CSV):
+### Traffic Sign Validation
 
-```bash
-python processing/preprocess_normalize.py   --input path/to/annotations.csv   --output cleaned_annotations.csv   --report checks_report.json
-```
+Validating traffic‑sign annotations is challenging due to country‑specific semantics and required temporal consistency.
 
-7) **Semantic scene coherence checks**:
+**VLM‑based evaluation.**  
+Front, front‑left, front‑right images are processed by GPT‑4o to produce natural‑language descriptions. Descriptions are grouped temporally by sign category (regulatory, warning, information). Limitations remain in subtle inconsistencies and regional semantics.
 
-```bash
-python processing/semantic_scene_consistency.py   --input merged_flat_data_corrected_auto_check.csv   --output merged_with_semantic_flags.csv   --report semantic_flags_report.json   --scene-col Scene
-```
+**YOLO‑based assistance.**  
+Pre‑trained YOLO‑TS models (TT100K, CCTSDB2021, GTSDB, Generated‑TT100K‑weather) propose candidate signs (front camera only), used **only** to assist human labelling.
 
-8) **(Optional) GUI #2 – triage flagged rows**:
+**Post‑processing & label unification.**  
+Candidates are merged per frame with confidence‑based NMS (IoU 0.7) and dataset‑specific thresholds, then mapped to a unified taxonomy (“Common” label space) to simplify review.
 
-```bash
-cd ui/review_flags
-# e.g., streamlit run app.py  (see the GUI's own README for exact arguments)
-```
+**Human‑in‑the‑loop verification.**  
+Annotators inspect all suggestions, decide presence/type/timing, remove false positives, and enforce temporal consistency. YOLO outputs are assistive, not ground truth.
 
-## Key outputs
+**Evaluation of VLM traffic‑sign detection.**  
+Two‑stage evaluation:
+1) Category‑level (Regulatory/Warning/Information) accuracy vs. human labels.  
+2) Description‑level similarity within each category using a standardised vocabulary and **fuzzy Jaccard**:
 
-- `original_requests.jsonl` – one Chat Completions request per line (with base64 images).
-- `Cleaned_results/iteration_*/merged_results_*.jsonl` – raw API returns (exact lines).
-- `Cleaned_results/iteration_*/corrected_results_*.json` – `{custom_id: parsed|raw|error}`.
-- `cleaned_annotations.csv` – normalized CSV (post-processing).
-- `merged_with_semantic_flags.csv` – CSV with `_check` columns for inconsistencies.
+$$
+J_f(A, B) = \frac{\sum_{a \in A} \max_{b \in B} \mathrm{sim}(a, b)}{|A \cup B|},
+$$
 
-## Tips
+where \\( \mathrm{sim}(a,b) \in [0,1] \\) is a normalised string similarity (e.g., token‑level fuzzy matching).
 
-- **Paths**: no hardcoded directories; pass them via CLI.
-- **IDs**: every request needs a stable `custom_id` so retries can map back.
-- **Git hygiene**: outputs and secrets are ignored by default (`.gitignore`).
-- **nuScenes**: install and point `--dataroot` to your local copy; we don’t redistribute data.
-- **GUIs as submodules**: add them with
-  ```bash
-  git submodule add -b main https://github.com/ayush939/Data-Labelling-GUI.git ui/review_raw
-  git submodule add -b v2   https://github.com/ayush939/Data-Labelling-GUI.git ui/review_flags
-  ```
+---
 
 ## License
 
 MIT (see `LICENSE`).
-
-## Citation
-
-If you use this pipeline in research, please cite your accompanying paper/repo.
