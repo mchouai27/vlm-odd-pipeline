@@ -1,6 +1,6 @@
 # VLM ODD Pipeline
 
-End-to-end pipeline for generating **Vision-Language Model (VLM)** annotations of nuScenes scenes, submitting at scale with the **OpenAI Batch API**, and turning raw outputs into a **clean, normalized, and semantically consistent** dataset.
+End-to-end pipeline to generate, batch, clean, and validate **Operational Design Domain (ODD)** annotations using **Vision-Language Models (VLMs)**.
 
 ## What’s inside
 
