@@ -1,1 +1,5 @@
-'"$@"'
+requests>=2.32
+pandas>=2.2
+numpy>=1.26
+tqdm>=4.66
+nuscenes-devkit>=1.1
