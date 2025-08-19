@@ -6,51 +6,51 @@ End-to-end pipeline to generate, batch, clean, and validate **Operational Design
 
 ## Pipeline at a glance
 
-> Rendered directly via Mermaid (works on GitHub).
+> Mermaid diagram (renders on GitHub).
 
 ```mermaid
 flowchart TB
-  %% --- Nodes ---
-  NUSC[NuScenes Database]
-  EXTRACT[Extract images & metadata]
-  THREE[Use 3 images<br/>(front, front-left, front-right)<br/>+ text prompt]
-  VLM[Process with VLM (GPT‑4o)]
-  ODD[Generate structured ODD JSON]
-  PREP[Automatic Preprocessing & Normalization]
-  GUI1[[GUI #1 (REQUIRED):<br/>Manual verification of first sample<br/>(temporal anchor)]]
-  SEM[Semantic checks:<br/>Consistency Across Cameras<br/>Scene Coherence]
-  GUI2[[GUI #2 (REQUIRED):<br/>Manual review of all flagged items<br/>(anything not 'OK')]]
-  FINAL[Finalize dataset & confirm accuracy]
-  EXPERT[Expert Assessment of Traffic Sign Detection]
+  NUSC[NuScenes database]
+  EXTRACT["Extract images and metadata"]
+  THREE["Use three images (front, front-left, front-right) + text prompt"]
+  VLM["Process with VLM (GPT-4o)"]
+  ODD["Generate structured ODD JSON"]
+  PREP["Automatic preprocessing and normalization"]
+  GUI1["GUI #1 (REQUIRED): manual verification of first sample (temporal anchor)"]
+  SEM["Semantic checks: cross-camera consistency and scene coherence"]
+  GUI2["GUI #2 (REQUIRED): manual review of all flagged items (anything not OK)"]
+  FINAL["Finalize dataset and confirm accuracy"]
+  EXPERT["Expert assessment of traffic sign detection"]
 
-  %% --- Groups (visual) ---
-  subgraph data_extraction
+  subgraph "data_extraction"
     EXTRACT --> THREE
   end
-  subgraph batch
+
+  subgraph "batch"
     THREE --> VLM --> ODD
   end
-  subgraph processing
+
+  subgraph "processing"
     PREP --> SEM
   end
-  subgraph ui
+
+  subgraph "ui"
     GUI1 --> GUI2
   end
 
-  %% --- Flow ---
   NUSC --> EXTRACT --> THREE --> VLM --> ODD --> PREP --> GUI1 --> SEM --> GUI2 --> FINAL
   GUI1 --> EXPERT --> FINAL
 ```
-
-**GUIs are required.**  
-- **GUI #1**: Verify the **first frame per scene** to anchor temporal consistency.  
-- **GUI #2**: Review and relabel all items **flagged** by automatic checks.
+**GUIs are required.**
+- GUI #1: verify the first frame per scene to anchor temporal consistency.
+- GUI #2: review and relabel all items flagged by automatic checks.
 
 ---
 
 ## Quickstart
 
-**0) Download nuScenes (official website).** Get the **trainval** split and extract locally. You’ll pass `--dataroot` to scripts below.
+**0) Download nuScenes (official website)**  
+Get the trainval split and extract locally. You will pass `--dataroot` to scripts below.
 
 **1) Build requests JSONL**
 ```bash
@@ -67,7 +67,7 @@ python batch/submit_batches.py   --base-dir <out_dir_for_iterations>   --origina
 python batch/monitor_batches.py   --ids <path_to_submitted_batch_ids.txt>   --stop-when-done
 ```
 
-**4) Retrieve & clean results**
+**4) Retrieve and clean results**
 ```bash
 # Single IDs file:
 python batch/retrieve_clean_results.py   --ids <path_to_submitted_batch_ids.txt>   --combined <combined_results.jsonl>   --cleaned <corrected_results.json>
@@ -83,7 +83,7 @@ pip install -r requirements.txt
 streamlit run app.py --   --input <corrected_results.json>   --out <raw_overrides.json>
 ```
 
-**6) Automatic Preprocessing & Normalization**
+**6) Automatic preprocessing and normalization**
 ```bash
 python processing/preprocess_normalize.py   --input <annotations.csv>   --output <cleaned_annotations.csv>   --report <checks_report.json>
 ```
@@ -160,79 +160,49 @@ streamlit run app.py --   --input <with_semantic_flags.csv>   --out <flag_overri
 
 ## Methodology
 
-Our approach follows a structured pipeline for processing nuScenes images and metadata with a Vision‑Language Model (VLM).
+Our approach follows a structured pipeline for processing nuScenes images and metadata with a Vision-Language Model (VLM).
 
 ### Data Preprocessing
-
 - Extract images and metadata from the nuScenes database.
-- Use three images (front, front‑left, front‑right) together with a text prompt.
+- Use three images (front, front-left, front-right) together with a text prompt.
 
-### Processing with Vision‑Language Model (VLM)
-
-- Feed the selected images and prompt into the VLM (**GPT‑4o**).  
-- GPT‑4o is chosen for strong multimodal reasoning—integrating visual inputs with natural‑language context to produce accurate, semantically rich descriptions useful for ODD construction.
+### Processing with Vision-Language Model (VLM)
+- Feed the selected images and prompt into the VLM (GPT-4o).
+- GPT-4o is chosen for strong multimodal reasoning, integrating visual inputs with natural-language context to produce accurate, semantically rich descriptions useful for ODD construction.
 
 ### Validation Steps
+To deliver consistent, high-quality scene annotations we combine automatic correction with manual verification:
 
-To deliver consistent, high‑quality scene annotations we combine **automatic** correction with **manual** verification:
+- **Automatic preprocessing and normalization**: applied to all frame-level annotations to improve logical and temporal consistency by (i) normalising binary fields to remove contradictory/unclear answers, (ii) standardising uncertain or partial expressions, (iii) consolidating categorical values, and (iv) explicitly marking rare/structurally absent features as negative.
+- **Manual verification of first sample (required)**: for each scene, the first frame is manually checked to confirm ODD parameters (e.g., road type, weather). This sample acts as a temporal anchor for subsequent consistency checks.
 
-- **Automatic Preprocessing and Normalization**  
-  Applied to all frame‑level annotations to improve logical and temporal consistency by:  
-  (i) normalising binary fields to remove contradictory/unclear answers,  
-  (ii) standardising uncertain or partial expressions,  
-  (iii) consolidating categorical values, and  
-  (iv) explicitly marking rare/structurally absent features as negative.  
-  The output becomes the input to manual verification.
+#### Automatic annotation correction and consistency checks
+After preprocessing and the first manual check, we apply a dedicated automated pipeline with two stages: temporal smoothing and logical validation.
 
-- **Manual Verification of First Sample (required)**  
-  For each scene, the first frame is manually checked to confirm ODD parameters (e.g., road type, weather).  
-  This sample acts as a **temporal anchor** for subsequent consistency checks.
+- **Temporal smoothing**: treat each scene as a time sequence for categorical/binary labels (e.g., potholes, lane narrow, street lights). Short isolated spikes are corrected via two hyperparameters n and m: segments with length < n are flipped to match neighbours; segments with n <= length < m are retained but passed to logical validation.
+- **Logical validation**: rule-based checks catch semantic/structural issues (per PAS ODD guidance), e.g. temporal anomalies (“immediate entry/exit”), cross-field inconsistencies (divided and undivided cannot both be yes), scene logic rules (roadworks should be supported by temporary signage or line markers), and environmental transitions (clear -> overcast must pass through partly cloudy except brief detours).
 
-#### Automatic Annotation Correction and Consistency Checks
+Each ODD parameter receives a status such as OK, Sudden lane change, or Illumination inconsistency to drive manual triage and filtering.
 
-After preprocessing and the first manual check, we apply a dedicated automated pipeline with two stages: **Temporal Smoothing** and **Logical Validation**.
-
-**Temporal Smoothing.**  
-Treat each scene as a time sequence for categorical/binary labels (e.g., `Potholes`, `LaneNarrow`, `StreetLights`). Short isolated spikes (a single *Yes* sandwiched by *No*s, or vice‑versa) are corrected by two hyperparameters *n* and *m*: segments with length `< n` are flipped to match neighbours; segments with `n ≤ length < m` are retained but passed to logical validation.
-
-**Logical Validation.**  
-Rule‑based checks catch semantic/structural issues (per PAS ODD guidance):
-- **Temporal anomalies:** e.g., “Immediate entry/exit”. Short segments (`< n`) are already flipped; `n ≤ length < m` are flagged.
-- **Cross‑field inconsistencies:** e.g., `Divided` and `Undivided` cannot both be *Yes*.
-- **Scene logic rules:** e.g., `RoadWorks` should be supported by `TemporaryRoadSignage` or `TemporaryLineMarkers`.
-- **Environmental transitions:** e.g., direct `Clear → Overcast` must pass through `PartlyCloudy` (except brief detours).
-
-Each ODD parameter receives a status such as `OK`, `Sudden lane change`, `Illumination inconsistency`, etc., to drive manual triage and filtering.
-
-**Second Manual Review (required).**  
-All parameters **flagged** with any status other than `OK` are reviewed and, if needed, re‑labelled to resolve subtle context‑dependent cases via human judgement.
+- **Second manual review (required)**: all parameters flagged with any status other than OK are reviewed and, if needed, re-labelled to resolve subtle context-dependent cases via human judgement.
 
 ### Traffic Sign Validation
+Validating traffic-sign annotations is challenging due to country-specific semantics and required temporal consistency.
 
-Validating traffic‑sign annotations is challenging due to country‑specific semantics and required temporal consistency.
+- **VLM-based evaluation**: front, front-left, front-right images are processed by GPT-4o to produce natural-language descriptions; grouped temporally by sign category (regulatory, warning, information).
+- **YOLO-based assistance**: pre-trained YOLO-TS models (TT100K, CCTSDB2021, GTSDB, Generated-TT100K-weather) propose candidate signs (front camera only), used only to assist human labeling.
+- **Post-processing and label unification**: candidates are merged per frame with confidence-based NMS (IoU 0.7) and dataset-specific thresholds, then mapped to a unified taxonomy (“Common” label space).
+- **Human-in-the-loop verification**: annotators inspect all suggestions, decide presence/type/timing, remove false positives, and enforce temporal consistency; YOLO outputs are assistive, not ground truth.
 
-**VLM‑based evaluation.**  
-Front, front‑left, front‑right images are processed by GPT‑4o to produce natural‑language descriptions. Descriptions are grouped temporally by sign category (regulatory, warning, information). Limitations remain in subtle inconsistencies and regional semantics.
-
-**YOLO‑based assistance.**  
-Pre‑trained YOLO‑TS models (TT100K, CCTSDB2021, GTSDB, Generated‑TT100K‑weather) propose candidate signs (front camera only), used **only** to assist human labelling.
-
-**Post‑processing & label unification.**  
-Candidates are merged per frame with confidence‑based NMS (IoU 0.7) and dataset‑specific thresholds, then mapped to a unified taxonomy (“Common” label space) to simplify review.
-
-**Human‑in‑the‑loop verification.**  
-Annotators inspect all suggestions, decide presence/type/timing, remove false positives, and enforce temporal consistency. YOLO outputs are assistive, not ground truth.
-
-**Evaluation of VLM traffic‑sign detection.**  
-Two‑stage evaluation:
-1) Category‑level (Regulatory/Warning/Information) accuracy vs. human labels.  
-2) Description‑level similarity within each category using a standardised vocabulary and **fuzzy Jaccard**:
+**Evaluation of VLM traffic-sign detection.** Two-stage evaluation:
+1) Category-level accuracy vs. human labels (Regulatory/Warning/Information).
+2) Description-level similarity within each category using a standardised vocabulary and fuzzy Jaccard:
 
 $$
-J_f(A, B) = \frac{\sum_{a \in A} \max_{b \in B} \mathrm{sim}(a, b)}{|A \cup B|},
+J_f(A, B) = \frac{\sum_{a \in A} \max_{b \in B} \mathrm{sim}(a, b)}{|A \cup B|}
 $$
 
-where \\( \mathrm{sim}(a,b) \in [0,1] \\) is a normalised string similarity (e.g., token‑level fuzzy matching).
+where \( \mathrm{sim}(a,b) \in [0,1] \) is a normalised string similarity (e.g., token-level fuzzy matching).
 
 ---
 
