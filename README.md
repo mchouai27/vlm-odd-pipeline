@@ -1,4 +1,3 @@
-````markdown
 # VLM ODD Pipeline
 
 End-to-end pipeline to generate, batch, clean, and validate **Operational Design Domain (ODD)** annotations from nuScenes using **Vision-Language Models (VLMs)**.
