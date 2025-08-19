@@ -120,8 +120,6 @@ Each line is a valid JSON object like:
   PY < original_requests.jsonl
   ```
 * **Cameras**: Must match nuScenes sensor keys (e.g., `CAM_FRONT`, `CAM_BACK_LEFT`, etc.).
-* **Paths**: No hardcoded dataset paths—always pass `--dataroot`.
-
 ---
 
 ## Example end-to-end (first steps)
