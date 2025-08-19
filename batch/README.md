@@ -143,12 +143,6 @@ curl "https://api.openai.com/v1/batches?limit=20" \
 * **401/403 errors** → Check your `OPENAI_API_KEY` environment variable.
 * **Malformed JSON** → Ensure all lines in `original_requests.jsonl` are valid JSON objects with `custom_id`.
 * **Slow downloads** → The script waits and retries if a batch is not yet complete.
-* **Security** → Add sensitive files to `.gitignore`:
-
-  ```
-  .env
-  Cleaned_results/
-  ```
 
 ---
 
