@@ -1,1 +1,25 @@
-'"$@"'
+# Python
+__pycache__/
+*.pyc
+
+# Virtual envs
+.venv/
+venv/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS/IDE junk
+.DS_Store
+.vscode/
+
+# Secrets
+.env
+*.key
+*.pem
+
+# Generated data
+*.jsonl
+*.csv
+*.parquet
+
