@@ -6,7 +6,7 @@ End-to-end pipeline to generate, batch, clean, and validate **Operational Design
 
 ## Pipeline at a glance
 
-> Mermaid diagram (renders on GitHub).
+> Mermaid diagram (renders on GitHub). Order: Preprocessing -> GUI #1 -> Semantic checks -> GUI #2. Extra link: NuScenes -> Expert assessment.
 
 ```mermaid
 flowchart TB
@@ -38,8 +38,12 @@ flowchart TB
     GUI1 --> GUI2
   end
 
+  %% Main pipeline flow (corrected order)
   NUSC --> EXTRACT --> THREE --> VLM --> ODD --> PREP --> GUI1 --> SEM --> GUI2 --> FINAL
+
+  %% Additional connections
   GUI1 --> EXPERT --> FINAL
+  NUSC --> EXPERT
 ```
 **GUIs are required.**
 - GUI #1: verify the first frame per scene to anchor temporal consistency.
@@ -202,7 +206,7 @@ $$
 J_f(A, B) = \frac{\sum_{a \in A} \max_{b \in B} \mathrm{sim}(a, b)}{|A \cup B|}
 $$
 
-where \( \mathrm{sim}(a,b) \in [0,1] \) is a normalised string similarity (e.g., token-level fuzzy matching).
+where \( \mathrm{sim}(a,b) \) in [0,1] is a normalised string similarity (e.g., token-level fuzzy matching).
 
 ---
 
