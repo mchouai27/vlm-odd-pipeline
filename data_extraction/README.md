@@ -1,60 +1,80 @@
-# Data Extraction Scripts
+# Build JSONL Requests for VLM (nuScenes)
 
-This directory contains Python scripts for extracting nuScenes images and metadata and preparing them for Vision-Language Model (VLM) batch processing.
-
----
-
-## `build_jsonl_requests.py`
-
-Generates a JSONL file where each line is a POST `/v1/chat/completions` request payload for an OpenAI-compatible VLM (`gpt-4o` in our case).  
-Each request includes:
-
-- A **text prompt** (augmented with the country and driving side based on scene metadata)
-- Base64-encoded JPEG images from selected camera views
+Script: `data_extraction/make_requests_jsonl.py`  
+Generates a **JSONL** file where **each line** is a complete `POST /v1/chat/completions` request for a Vision-Language Model (VLM).  
+For every nuScenes sample, it embeds a **text prompt** (augmented with location/driving side) and **base64 images** from selected cameras.
 
 ---
 
-### Requirements
+## What it does
 
-- Python 3.8+
-- [nuScenes devkit](https://github.com/nutonomy/nuscenes-devkit)
-- `tqdm`
-
-Install dependencies:
-```bash
-pip install nuscenes-devkit tqdm
-````
+- Loads **nuScenes** metadata (`scene.json`, `sample.json`, `log.json`) for a given split (default `v1.0-trainval`).
+- For each scene → iterates samples (sorted by timestamp).
+- Encodes selected camera images as **base64 data URLs** (`data:image/jpeg;base64,...`).
+- Injects **country** and **driving side** (left/right) into your prompt **after a sentinel substring**.
+- Writes one request per line to `original_requests.jsonl` (or your chosen `--out` path).
+- Adds a stable `custom_id` → `sceneToken__sampleToken`.
 
 ---
 
-### Usage
+## Usage
 
 ```bash
-python data_extraction/build_jsonl_requests.py \
-    --dataroot /path/to/nuscenes \
-    --version v1.0-trainval \
-    --prompt-path prompt.txt \
-    --out original_requests.jsonl \
-    --cameras CAM_FRONT_LEFT CAM_FRONT CAM_FRONT_RIGHT \
-    --insert-after "- CAM_FRONT_RIGHT "
+python data_extraction/make_requests_jsonl.py \
+  --dataroot /path/to/nuscenes \
+  --version v1.0-trainval \
+  --prompt-path configs/prompts/prompt.txt \
+  --out original_requests.jsonl \
+  --cameras CAM_FRONT_LEFT CAM_FRONT CAM_FRONT_RIGHT \
+  --insert-after "- CAM_FRONT_RIGHT "
 ```
 
-**Arguments:**
+### Arguments
 
-| Argument         | Required | Description                                                                                           |
-| ---------------- | -------- | ----------------------------------------------------------------------------------------------------- |
-| `--dataroot`     | Yes      | Path to your nuScenes dataset root (contains the split directory, e.g., `v1.0-trainval`).             |
-| `--version`      | No       | nuScenes split version. Default: `v1.0-trainval`.                                                     |
-| `--prompt-path`  | Yes      | Path to the prompt template text file.                                                                |
-| `--out`          | No       | Output JSONL file path. Default: `original_requests.jsonl`.                                           |
-| `--cameras`      | No       | Space-separated camera sensors to include. Default: `CAM_FRONT_LEFT CAM_FRONT CAM_FRONT_RIGHT`.       |
-| `--insert-after` | No       | Sentinel string in the prompt after which location info is inserted. Default: `"- CAM_FRONT_RIGHT "`. |
+| Flag             | Required | Default                                    | Description                                                               |
+| ---------------- | -------- | ------------------------------------------ | ------------------------------------------------------------------------- |
+| `--dataroot`     | Yes      | —                                          | nuScenes root (contains the split dir like `v1.0-trainval`).              |
+| `--version`      | No       | `v1.0-trainval`                            | nuScenes split version.                                                   |
+| `--prompt-path`  | Yes      | —                                          | Path to your base prompt `*.txt`.                                         |
+| `--out`          | No       | `original_requests.jsonl`                  | Output JSONL path.                                                        |
+| `--cameras`      | No       | `CAM_FRONT_LEFT CAM_FRONT CAM_FRONT_RIGHT` | Space-separated camera sensor names to include.                           |
+| `--insert-after` | No       | `- CAM_FRONT_RIGHT ` (note trailing space) | **Sentinel** substring in the prompt where location details get injected. |
 
 ---
 
-### Output format
+## Prompt injection (important)
 
-Each line in the JSONL contains:
+The script augments your prompt with:
+
+```
+. These images were captured in <Country>. Driving is on the <left|right> side of the road.
+```
+
+It **inserts this text right after** the **exact** sentinel substring given by `--insert-after`.
+Make sure your prompt **contains** that substring (e.g., a bullet list of cameras):
+
+**Example `prompt.txt` snippet**
+
+```
+- CAM_FRONT_LEFT
+- CAM_FRONT
+- CAM_FRONT_RIGHT 
+```
+
+If the sentinel is not present → the script raises a clear error.
+
+Countries/sides are inferred from nuScenes log locations:
+
+* `singapore-*` → Singapore, driving on **left**
+* `boston-seaport` → USA, driving on **right**
+
+(Unknown locations are labeled as `Unknown`/`unknown`.)
+
+---
+
+## Output format (one line per request)
+
+Each line is a valid JSON object like:
 
 ```json
 {
@@ -67,8 +87,9 @@ Each line in the JSONL contains:
       {
         "role": "user",
         "content": [
-          { "type": "text", "text": "<prompt with location info>" },
-          { "type": "image_url", "image_url": { "url": "data:image/jpeg;base64,<...>" } }
+          { "type": "text", "text": "<your prompt with injected location details>" },
+          { "type": "image_url", "image_url": { "url": "data:image/jpeg;base64,..." } },
+          { "type": "image_url", "image_url": { "url": "data:image/jpeg;base64,..." } }
         ]
       }
     ]
@@ -76,16 +97,44 @@ Each line in the JSONL contains:
 }
 ```
 
+> You can change the `"model"` inside the script if needed.
+
 ---
 
-### Notes
+## Tips & troubleshooting
 
-* The script is **location-agnostic**: you must provide your own `--dataroot` path.
-* Images are embedded inline as Base64 data URLs (no external hosting required).
-* Samples without any of the selected camera views are skipped.
-* The `--insert-after` sentinel must exist in your `prompt.txt`; otherwise, the script will raise an error.
+* **No images for a sample?** That sample is skipped (no request written).
+* **Large files**: JSONL can get big (base64 images). Split later with your batch submit tool.
+* **Validate JSONL** quickly:
 
+  ```bash
+  python - <<'PY'
+  import json, sys
+  ok=0
+  for i,l in enumerate(sys.stdin,1):
+      try: json.loads(l); ok+=1
+      except Exception as e: print(f"line {i}: {e}")
+  print("valid lines:", ok)
+  PY < original_requests.jsonl
+  ```
+* **Cameras**: Must match nuScenes sensor keys (e.g., `CAM_FRONT`, `CAM_BACK_LEFT`, etc.).
+* **Paths**: No hardcoded dataset paths—always pass `--dataroot`.
+
+---
+
+## Example end-to-end (first steps)
+
+1. Build the request file:
+
+```bash
+python data_extraction/make_requests_jsonl.py \
+  --dataroot /data/sets/nuscenes \
+  --prompt-path configs/prompts/prompt.txt \
+  --out original_requests.jsonl
 ```
 
+2. Submit via your Batch API tooling (see `batch/submit_batches.py` in this repo), then monitor, retrieve, and clean.
 
 
+::contentReference[oaicite:0]{index=0}
+```
