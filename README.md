@@ -10,39 +10,46 @@ End-to-end pipeline to generate, batch, clean, and validate **Operational Design
 
 ```mermaid
 flowchart TB
+  %% Nodes
   NUSC[NuScenes database]
   EXTRACT["Extract images and metadata"]
   THREE["Use three images (front, front-left, front-right) + text prompt"]
   VLM["Process with VLM (GPT-4o)"]
-  ODD["Generate structured ODD JSON"]
+  ODD["Structured ODD JSON"]
   PREP["Automatic preprocessing and normalization"]
-  GUI1["GUI #1 (REQUIRED): manual verification of first sample (temporal anchor)"]
   SEM["Semantic checks: cross-camera consistency and scene coherence"]
+  GUI1["GUI #1 (REQUIRED): manual verification of first sample (temporal anchor)"]
   GUI2["GUI #2 (REQUIRED): manual review of all flagged items (anything not OK)"]
-  FINAL["Finalize dataset and confirm accuracy"]
   EXPERT["Expert assessment of traffic sign detection"]
+  FINAL["Finalize dataset"]
 
-  subgraph "data_extraction"
+  %% Groups
+  subgraph data_extraction
     EXTRACT --> THREE
   end
 
-  subgraph "batch"
+  subgraph batch
     THREE --> VLM --> ODD
   end
 
-  subgraph "processing"
+  subgraph processing
     PREP --> SEM
   end
 
-  subgraph "ui"
+  subgraph ui
+    GUI1 --> GUI2
   end
 
-  %% Main pipeline flow (corrected order)
-  NUSC --> EXTRACT --> THREE --> VLM --> ODD --> PREP --> GUI1 --> SEM --> GUI2 --> FINAL
+  %% Main flow (no links between 'ui' and 'processing')
+  NUSC --> EXTRACT
+  ODD --> PREP
+  SEM --> FINAL
+  GUI2 --> FINAL
 
-  %% Additional connections
-  EXPERT --> FINAL
+  %% Additional connection requested
   NUSC --> EXPERT
+  EXPERT --> FINAL
+
 ```
 **GUIs are required.**
 - GUI #1: verify the first frame per scene to anchor temporal consistency.
