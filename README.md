@@ -9,7 +9,7 @@ End-to-end pipeline to generate, batch, clean, and validate **Operational Design
 > Mermaid diagram (renders on GitHub). Order: Preprocessing -> GUI #1 -> Semantic checks -> GUI #2. Extra link: NuScenes -> Expert assessment.
 
 ```mermaid
-flowchart TB
+flowchart LR
   %% Nodes
   NUSC[NuScenes database]
   EXTRACT[make_requests_jsonl.py]
@@ -24,20 +24,24 @@ flowchart TB
 
   %% Groups (no internal edges)
   subgraph data_extraction
+    direction LR
     EXTRACT
   end
 
   subgraph batch
+    direction LR
     SUBMIT
     RETRIEVE
   end
 
   subgraph processing
+    direction LR
     PREP
     SEM
   end
 
   subgraph ui
+    direction LR
     GUI1
     GUI2
   end
