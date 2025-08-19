@@ -19,19 +19,6 @@ For every nuScenes sample, it embeds a **text prompt** (augmented with location/
 
 ---
 
-## Requirements
-
-- Python 3.8+
-- `nuscenes-devkit` (installed and dataset available locally)
-- `tqdm` (optional; script falls back gracefully if missing)
-
-Install:
-```bash
-pip install nuscenes-devkit tqdm
-````
-
----
-
 ## Usage
 
 ```bash
