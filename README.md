@@ -186,7 +186,7 @@ python processing/preprocess_normalize.py \
   --report <checks_report.json>
 ```
 
-**6) GUI #1 — Manual verification of first sample (REQUIRED)**
+**6) GUI #1 — Manual verification of first sample**
 
 ```bash
 cd ui/review_raw
@@ -209,7 +209,7 @@ python processing/semantic_scene_consistency.py \
   --scene-col Scene
 ```
 
-**8) GUI #2 — Manual review of flagged items (REQUIRED)**
+**8) GUI #2 — Manual review of flagged items**
 
 ```bash
 cd ui/review_flags
@@ -223,7 +223,6 @@ streamlit run app.py -- \
 
 * Apply overrides from both GUIs to produce the final consistent dataset.
 
----
 ---
 
 ## License
