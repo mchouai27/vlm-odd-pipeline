@@ -23,32 +23,42 @@ flowchart TB
   EXPERT["Expert assessment of traffic sign detection"]
   FINAL["Finalize dataset"]
 
-  %% Groups
+  %% Groups (no internal edges)
   subgraph data_extraction
-    EXTRACT --> THREE
+    EXTRACT
+    THREE
   end
 
   subgraph batch
-    THREE --> VLM --> ODD
+    VLM
+    ODD
   end
 
   subgraph processing
-    PREP --> SEM
+    PREP
+    SEM
   end
 
   subgraph ui
-    GUI1 --> GUI2
+    GUI1
+    GUI2
   end
 
-  %% Main flow (no links between 'ui' and 'processing')
+  %% Main flow (as requested)
   NUSC --> EXTRACT
+  EXTRACT --> THREE
+  THREE --> VLM
+  VLM --> ODD
   ODD --> PREP
-  SEM --> FINAL
+  PREP --> GUI1
+  GUI1 --> SEM
+  SEM --> GUI2
   GUI2 --> FINAL
 
-  %% Additional connection requested
+  %% Additional connection
   NUSC --> EXPERT
   EXPERT --> FINAL
+
 
 ```
 **GUIs are required.**
