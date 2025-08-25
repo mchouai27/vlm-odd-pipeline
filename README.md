@@ -217,7 +217,7 @@ pip install -r requirements.txt
 streamlit run app.py -- \
   --input <with_semantic_flags.csv> \
   --out <flag_overrides.csv>
----
+```
 ---
 ## License
 
