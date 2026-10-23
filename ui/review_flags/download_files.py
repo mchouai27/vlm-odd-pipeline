@@ -11,7 +11,7 @@ LINKS = [
 
 # Download function
 def download_file(url):
-    output_dir = "/s3_storage/chouai-temp/nuscenes/downloads$"
+    output_dir = os.getenv("NUSCENES_DOWNLOAD_DIR", "./downloads")
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, os.path.basename(url))
     try:

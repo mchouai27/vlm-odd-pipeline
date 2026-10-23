@@ -1,0 +1,36 @@
+{
+  "_status": "SOURCE PATHS inferred from original structured VLM prompt; all aggregated field definitions require historical-run confirmation",
+  "NumberOfLanes": ["Scenery.DrivableArea.LaneSpecification.NumberOfLanes"],
+  "Crossroads": ["Scenery.Intersections.Crossroads"],
+  "PedestrianCrossings": ["Scenery.SpecialStructures.PedestrianCrossings"],
+  "Divided": ["Scenery.DrivableArea.DrivableAreaGeometry.TransversePlane.Divided"],
+  "Undivided": ["Scenery.DrivableArea.DrivableAreaGeometry.TransversePlane.Undivided"],
+  "BarriersOnEdges": ["Scenery.DrivableArea.DrivableAreaGeometry.TransversePlane.BarriersOnEdges"],
+  "StreetFurniture": ["Scenery.FixedRoadStructures.StreetFurniture"],
+  "ShoulderGrass": ["Scenery.DrivableArea.DrivableAreaEdge.ShoulderGrass"],
+  "ShoulderPaved": ["Scenery.DrivableArea.DrivableAreaEdge.ShoulderPaved"],
+  "SolidBarriers": ["Scenery.DrivableArea.DrivableAreaEdge.SolidBarriers"],
+  "Parking": ["Scenery.DrivableArea.DrivableAreaType.Parking"],
+  "RadialRoads": ["Scenery.DrivableArea.DrivableAreaType.RadialRoads"],
+  "Cloudiness": [
+    "EnvironmentalConditions.Illumination.Cloudiness.Clear",
+    "EnvironmentalConditions.Illumination.Cloudiness.PartlyCloudy",
+    "EnvironmentalConditions.Illumination.Cloudiness.Overcast"
+  ],
+  "Illumination": [
+    "EnvironmentalConditions.Illumination.Day",
+    "EnvironmentalConditions.Illumination.Night"
+  ],
+  "NonPrecipitatingWaterDroplets": ["EnvironmentalConditions.Particulates.NonPrecipitatingWaterDroplets"],
+  "StandingWater": ["Scenery.DrivableArea.DrivableAreaSurface.InducedSurfaceConditions.StandingWater"],
+  "VolumeOfTraffic": ["DynamicElements.Traffic.VolumeOfTraffic"],
+  "DensityOfAgents": ["DynamicElements.Traffic.DensityOfAgents"],
+  "FlowRate": ["DynamicElements.Traffic.FlowRate"],
+  "RoadWorks": ["Scenery.TemporaryRoadStructures.RoadWorks"],
+  "TransversePlane": [
+    "Scenery.DrivableArea.DrivableAreaGeometry.TransversePlane.Divided",
+    "Scenery.DrivableArea.DrivableAreaGeometry.TransversePlane.Undivided",
+    "Scenery.DrivableArea.DrivableAreaGeometry.TransversePlane.Pavements",
+    "Scenery.DrivableArea.DrivableAreaGeometry.TransversePlane.BarriersOnEdges"
+  ]
+}

@@ -1,37 +1,19 @@
-# GUI: ODD Data Validation
+# Scene-anchor review interface
 
-![Alt text](ui.png?raw=true "GUI: ODD Data Validation")
+This Streamlit interface was present in the original annotation pipeline. It reads reviewer-assigned records and nuScenes camera images from privately configured object storage. The repository **does not** include that object-store data or access credentials.
 
-Follow these steps to run and validate the ODD data.
+## Local configuration
 
-### Clone this repository
-```bash
-git clone <this repo>
-```
+Run from this folder. Create a local `credentials.json` outside Git or excluded by `.gitignore` with JSON keys `accessKey` and `secretKey`. Set these environment variables to values from **your own authorized storage**:
 
-### Change the directory
-```bash
-cd Data-Labelling-GUI
-```
+    export ODD_STORAGE_ENDPOINT=your-endpoint.example.org
+    export ODD_STORAGE_BUCKET=your-bucket
+    export ODD_STORAGE_OBJECT=your-review-records.json
+    export ODD_STORAGE_CREDENTIALS=./credentials.json
 
-### Install the dependencies
-```bash
-pip install -r requirements.txt
-```
+Edit `config.json` so `annotator_id` matches the `Responsible` field of **your own** reviewer records, preferably using pseudonymous values for any public demonstration.
 
-### Configure your user name
-Please change you username into the config.json file of this repository(required to allot you your pool of data to be validated). 
-```json
-{
-    "username_thi": "Mittal" // or 'Chouai', 'Klaumann', 'Okumus' 
-}
-```
+    python -m pip install -r requirements.txt
+    streamlit run app.py
 
-### Launch the app from the terminal
-```bash
-streamlit run app.py
-```
-
-## Make sure !!
-### You have "credentials.json" into the "GUI" directory required for S3 credentials. (you can download it when you generate a new key/token at s3)
-### You have already gone through the instructions on how to label.
+The original project used institution-specific access paths, which were deliberately removed for blind review. This interface has not been end-to-end tested against the private data in the uploaded ZIP.

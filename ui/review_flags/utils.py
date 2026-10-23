@@ -240,10 +240,10 @@ def data_editor(data):
                                                                ])
                         #st.write("Part-Time / Full-Time")
                         edited_value_signs = st.data_editor({f"Signs": value_signs}, num_rows="dynamic", key=key+".Signs"+data["Sample"], hide_index=True)
-                        annotation_data[key+".Signs"] = f"{edited_value_signs["Signs"]}"
+                        annotation_data[key+".Signs"] = str(edited_value_signs["Signs"])
 
                         edited_value_too = st.data_editor({f"TimeOfOperation": value_too}, num_rows="dynamic", key=key+".TimeOfOperation"+data["Sample"], hide_index=True)
-                        annotation_data[key+".TimeOfOperation"] = f"{edited_value_too["TimeOfOperation"]}"
+                        annotation_data[key+".TimeOfOperation"] = str(edited_value_too["TimeOfOperation"])
                         
                         edited_value = None
 
@@ -350,8 +350,12 @@ def login_to_s3(s3_credentials_json):
     MINIO_ACCESS_KEY = secret_keys["accessKey"]
     MINIO_SECRET_KEY = secret_keys["secretKey"]
 
+    endpoint = os.getenv("ODD_STORAGE_ENDPOINT")
+    if not endpoint:
+        raise ValueError("ODD_STORAGE_ENDPOINT is required for private annotation storage")
+
     client = Minio(
-        "s3api.aimotions1.rz.fh-ingolstadt.de",                            
+        endpoint,
         access_key=MINIO_ACCESS_KEY,                      
         secret_key=MINIO_SECRET_KEY, 
         secure=True
@@ -416,8 +420,10 @@ def download_data(client, local_dir="./"):
     data_path = os.path.join(local_dir, "sets")
     if not os.path.exists(data_path):
             
-        bucket_name = 'aimotion-private-panoptic'
-        prefix = 'panoptic/data/'  # Folder in the bucket
+        bucket_name = os.getenv("ODD_STORAGE_BUCKET")
+        if not bucket_name:
+            raise ValueError("ODD_STORAGE_BUCKET is required")
+        prefix = os.getenv("ODD_STORAGE_IMAGE_PREFIX", "data/")
         
         # List all objects under the 'data' prefix
         objects = client.list_objects(bucket_name, prefix=prefix, recursive=True)
@@ -438,7 +444,7 @@ def download_data(client, local_dir="./"):
 def get_list(json_data, config):
     user_keys = []
     for key in json_data.keys():
-        if json_data[key]["Responsible"] == config["username_thi"]:
+        if json_data[key]["Responsible"] == config["annotator_id"]:
             user_keys.append(key)
     return tuple(user_keys)
 
@@ -460,7 +466,7 @@ def get_annotable_samples(path_csv):
     cols = list(data.columns)
     cols = [col for col in cols if "_check" in col ]
     data_temp = data[cols]
-    mask = ~data_temp.apply(lambda row: row.str.contains('OK'), axis=1).all(axis=1)
+    mask = ~data_temp.fillna("").eq("OK").all(axis=1)
     #data_SceneSample = data[mask]
     indexes = data[mask].index.tolist()
     return (indexes, data)

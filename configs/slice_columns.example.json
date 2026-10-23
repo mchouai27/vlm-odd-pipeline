@@ -1,0 +1,11 @@
+{
+  "_status": "TEMPLATE: compare column names and category thresholds with the ACTUAL V3 export before using",
+  "day": "EnvironmentalConditions.Illumination.Day",
+  "night": "EnvironmentalConditions.Illumination.Night",
+  "volume": "DynamicElements.Traffic.VolumeOfTraffic",
+  "crossroad": "Scenery.Intersections.Crossroads",
+  "lanes": "Scenery.DrivableArea.LaneSpecification.NumberOfLanes",
+  "pedestrian_crossing": "Scenery.SpecialStructures.PedestrianCrossings",
+  "standing_water": "Scenery.DrivableArea.DrivableAreaSurface.InducedSurfaceConditions.StandingWater",
+  "droplet_cues": "EnvironmentalConditions.Particulates.NonPrecipitatingWaterDroplets"
+}

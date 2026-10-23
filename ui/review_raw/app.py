@@ -1,3 +1,4 @@
+import os
 import time
 import streamlit as st
 
@@ -14,6 +15,9 @@ def main(client, json_data, files, config):
     if 'counter' not in st.session_state: st.session_state.counter = config["last_index"]
     if "json_data" not in st.session_state: st.session_state.json_data = json_data
     if "t0" not in st.session_state: st.session_state.t0 = time.time()
+    if not files or st.session_state.counter >= len(files):
+        st.success("All assigned scenes have been reviewed.")
+        st.stop()
     
     # slider for adjustable json length and image width
     image_width = st.slider("Adjust image width", 100, 2000, config["image_width"])
@@ -57,7 +61,10 @@ def main(client, json_data, files, config):
         """, unsafe_allow_html=True)
 
         image_paths = data['Metadata']['Sample']['ImagePaths']
-        image_paths = {key:value.replace("s3://aimotion-private-panoptic/", "") for key, value in image_paths.items()}
+        image_paths = {
+            key: value.replace(f"s3://{s3_bucket_name}/", "", 1)
+            for key, value in image_paths.items()
+        }
         cols = [st.columns(i+1, vertical_alignment = "center") for i in range(2)]
 
         # display images
@@ -83,7 +90,6 @@ def main(client, json_data, files, config):
         # Add a button to save the updated dictionary
         if st.button("Save & Next ➡️"):
             
-            print(data["Responsible"])
             if edited_data != data_editable:
                 data["Status"]["Modified"]=True
                 data["Status"]["Visited"]=True
@@ -121,16 +127,20 @@ def main(client, json_data, files, config):
         
         if st.button("Skip"):
             st.session_state.counter  += 1
+            st.session_state.t0 = time.time()
             st.rerun()
 
 if __name__ == "__main__":
 
-    secret_keys_path = "./credentials.json"
+    secret_keys_path = os.getenv("ODD_STORAGE_CREDENTIALS", "./credentials.json")
     config_path = "./config.json"
-    s3_object_name = "JSON_Files/extracted_samples_with_responsible.json"
-    s3_bucket_name = "aimotion-private-panoptic"
+    s3_object_name = os.getenv("ODD_STORAGE_OBJECT")
+    s3_bucket_name = os.getenv("ODD_STORAGE_BUCKET")
 
     st.set_page_config(layout="wide")
+    if not s3_bucket_name or not s3_object_name:
+        st.error("Set ODD_STORAGE_BUCKET and ODD_STORAGE_OBJECT before launching the reviewer.")
+        st.stop()
     client = login_to_s3(secret_keys_path)
     config = load_config()
     json_data = s3_read_data(client, s3_bucket_name, s3_object_name)

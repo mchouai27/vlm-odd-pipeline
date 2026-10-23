@@ -1,0 +1,27 @@
+{
+  "_status": "INCOMPLETE: enter identifiers/hashes from your real experiments; null is intentionally not an experimental claim",
+  "BEVFusion": {
+    "input_modality": "camera-only",
+    "repository_url": null,
+    "repository_commit": null,
+    "configuration_file": null,
+    "checkpoint_download_url": null,
+    "checkpoint_filename": null,
+    "checkpoint_sha256": null,
+    "prediction_json_sha256": null,
+    "inference_command": null
+  },
+  "BEVFormer-Tiny": {
+    "input_modality": "camera-only",
+    "backbone": "ResNet-50 (per manuscript)",
+    "training_epochs": 24,
+    "repository_url": null,
+    "repository_commit": null,
+    "configuration_file": null,
+    "checkpoint_download_url": null,
+    "checkpoint_filename": null,
+    "checkpoint_sha256": null,
+    "prediction_json_sha256": null,
+    "inference_command": null
+  }
+}

@@ -17,9 +17,30 @@ venv/
 .env
 *.key
 *.pem
+credentials.json
+**/credentials.json
+*service-account*.json
 
-# Generated data
-*.jsonl
-*.csv
-*.parquet
+# Local nuScenes assets and generated requests (may embed base64 images)
+data/
+downloads/
+samples/
+sweeps/
+maps/
+original_requests.jsonl
+**/original_requests.jsonl
+*.tgz
+*.tar.gz
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Inputs holding credentials, sensitive annotations, or large raw predictions
+# should be curated or tracked with Git LFS when licensing permits.
+
+# Local experiment outputs (curated, anonymized results/ are tracked)
+run_outputs/
+workdir/
+*.log
 

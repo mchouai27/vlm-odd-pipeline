@@ -1,37 +1,19 @@
-# GUI: ODD Data Validation
+# Flagged-frame review interface
 
-![Alt text](ui.png?raw=true "GUI: ODD Data Validation")
+This Streamlit interface was used to inspect frames flagged by the temporal/semantic checks. The original author-specific filesystem paths have been replaced by configuration variables; private data must be provided locally.
 
-Follow these steps to run and validate the ODD data.
+## Local configuration
 
-### Clone this repository
-```bash
-git clone <this repo>
-```
+From this directory, set:
 
-### Change the directory
-```bash
-cd Data-Labelling-GUI
-```
+    export ODD_FLAGS_CSV=/path/to/with_semantic_flags.csv
+    export ODD_METADATA_JSON=/path/to/extracted_metadata.json
+    export ODD_IMAGE_ROOT=/path/to/nuscenes
+    export ODD_FLAGS_OUTPUT_CSV=/path/to/flagged_review_output.csv
 
-### Install the dependencies
-```bash
-pip install -r requirements.txt
-```
+Then start the existing application:
 
-### Configure your user name
-Please change you username into the config.json file of this repository(required to allot you your pool of data to be validated). 
-```json
-{
-    "username_thi": "Mittal" // or 'Chouai', 'Klaumann', 'Okumus' 
-}
-```
+    python -m pip install -r requirements.txt
+    streamlit run app.py
 
-### Launch the app from the terminal
-```bash
-streamlit run app.py
-```
-
-## Make sure !!
-### You have "credentials.json" into the "GUI" directory required for S3 credentials. (you can download it when you generate a new key/token at s3)
-### You have already gone through the instructions on how to label.
+The input CSV must include the check columns used by `get_annotable_samples`. The metadata JSON must contain the scene/sample relationships expected by the app. Make a copy of your own annotations before testing save operations. Source code is supplied, but the original private annotation data was not part of the uploaded archive.

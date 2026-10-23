@@ -146,8 +146,12 @@ def login_to_s3(s3_credentials_json):
     MINIO_ACCESS_KEY = secret_keys["accessKey"]
     MINIO_SECRET_KEY = secret_keys["secretKey"]
 
+    endpoint = os.getenv("ODD_STORAGE_ENDPOINT")
+    if not endpoint:
+        raise ValueError("ODD_STORAGE_ENDPOINT is required for private annotation storage")
+
     client = Minio(
-        "s3api.aimotions1.rz.fh-ingolstadt.de",                            
+        endpoint,
         access_key=MINIO_ACCESS_KEY,                      
         secret_key=MINIO_SECRET_KEY, 
         secure=True
@@ -212,8 +216,10 @@ def download_data(client, local_dir="./"):
     data_path = os.path.join(local_dir, "sets")
     if not os.path.exists(data_path):
             
-        bucket_name = 'aimotion-private-panoptic'
-        prefix = 'panoptic/data/'  # Folder in the bucket
+        bucket_name = os.getenv("ODD_STORAGE_BUCKET")
+        if not bucket_name:
+            raise ValueError("ODD_STORAGE_BUCKET is required")
+        prefix = os.getenv("ODD_STORAGE_IMAGE_PREFIX", "data/")
         
         # List all objects under the 'data' prefix
         objects = client.list_objects(bucket_name, prefix=prefix, recursive=True)
@@ -234,6 +240,6 @@ def download_data(client, local_dir="./"):
 def get_list(json_data, config):
     user_keys = []
     for key in json_data.keys():
-        if json_data[key]["Responsible"] == config["username_thi"]:
+        if json_data[key]["Responsible"] == config["annotator_id"]:
             user_keys.append(key)
     return tuple(user_keys)

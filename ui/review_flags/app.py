@@ -1,3 +1,4 @@
+import os
 import time
 import pandas as pd
 import json
@@ -22,12 +23,15 @@ def main(data_csv, config, json_file, save_path, data_path):
 
     # set session state data
     if 'counter' not in st.session_state: st.session_state.counter = config["last_index"]
-    if 'indexes' not in st.session_state: st.session_state.index = indexes
+    if 'index' not in st.session_state: st.session_state.index = indexes
     if "json_data" not in st.session_state: st.session_state.json_data = data_og
     if "t0" not in st.session_state: st.session_state.t0 = time.time()
     if "frame" not in st.session_state: st.session_state.frame = 0
     if "image_paths" not in st.session_state: st.session_state.image_paths = None
     if "current_token" not in st.session_state: st.session_state.current_token = None
+    if not indexes or st.session_state.counter >= len(indexes):
+        st.success("All flagged frames have been reviewed.")
+        st.stop()
     
     # slider for adjustable json length and image width
     image_width = st.slider("Adjust image width", 100, 2000, config["image_width"])
@@ -79,17 +83,17 @@ def main(data_csv, config, json_file, save_path, data_path):
         
         # do this on "Next Frame" click buttom
         def click_nf():
-            next_token = json_file[f"{json_file[scene_sample]["Scene"]["SceneToken"]}__{st.session_state.current_token}"]['Sample']['NextSampleToken']
+            next_token = json_file[f"{json_file[scene_sample]['Scene']['SceneToken']}__{st.session_state.current_token}"]['Sample']['NextSampleToken']
             if len(next_token) != 0:
-                st.session_state.image_paths = json_file[f"{json_file[scene_sample]["Scene"]["SceneToken"]}__{next_token}"]['Sample']['ImagePaths']
+                st.session_state.image_paths = json_file[f"{json_file[scene_sample]['Scene']['SceneToken']}__{next_token}"]['Sample']['ImagePaths']
                 st.session_state.current_token = next_token
                 st.session_state.frame += 1
         
         # do this on "Previous Frame" click buttom
         def click_pf():
-            prev_token = json_file[f"{json_file[scene_sample]["Scene"]["SceneToken"]}__{st.session_state.current_token}"]["Sample"]["PrevSampleToken"]
+            prev_token = json_file[f"{json_file[scene_sample]['Scene']['SceneToken']}__{st.session_state.current_token}"]["Sample"]["PrevSampleToken"]
             if len(prev_token) != 0:
-                st.session_state.image_paths = json_file[f"{json_file[scene_sample]["Scene"]["SceneToken"]}__{prev_token}"]['Sample']['ImagePaths']
+                st.session_state.image_paths = json_file[f"{json_file[scene_sample]['Scene']['SceneToken']}__{prev_token}"]['Sample']['ImagePaths']
                 st.session_state.current_token = prev_token
                 st.session_state.frame -= 1 
         
@@ -147,7 +151,7 @@ def main(data_csv, config, json_file, save_path, data_path):
                 st.session_state.json_data.iloc[st.session_state.index[st.session_state.counter]] = edited_data
                
                 # save to source csv path
-                st.session_state.json_data.to_csv(save_path)
+                st.session_state.json_data.to_csv(save_path, index=False)
                 
                 # set the state variables
                 st.session_state.counter += 1
@@ -175,6 +179,7 @@ def main(data_csv, config, json_file, save_path, data_path):
             st.session_state.image_paths = None 
             st.session_state.current_token = None
             st.session_state.frame = 0
+            st.session_state.t0 = time.time()
             st.rerun()
         
         
@@ -187,10 +192,13 @@ if __name__ == "__main__":
     config = load_config()
     
     # load the paths for the data
-    path_csv = "/fast_storage/mittal/Data-Labelling-GUI/merged_flat_data_corrected_auto_check_with_flags_mittal.csv"
-    path_json = "/fast_storage/mittal/Data-Labelling-GUI/extracted_metadata.json"
-    data_path = "/fast_storage/mittal/data"
-    save_path = "/fast_storage/mittal/Data-Labelling-GUI/merged_flat_data_corrected_auto_check_with_flags_mittal.csv"
+    path_csv = os.getenv("ODD_FLAGS_CSV")
+    path_json = os.getenv("ODD_METADATA_JSON")
+    data_path = os.getenv("ODD_IMAGE_ROOT")
+    save_path = os.getenv("ODD_FLAGS_OUTPUT_CSV", path_csv)
+    if not all([path_csv, path_json, data_path, save_path]):
+        st.error("Set ODD_FLAGS_CSV, ODD_METADATA_JSON, and ODD_IMAGE_ROOT.")
+        st.stop()
 
     # load the files
     json_data = get_json()
