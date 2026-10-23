@@ -2,7 +2,51 @@
 
 **Quality-controlled Operational Design Domain (ODD) annotations for nuScenes.**
 
-Research code for the IEEE IV 2027 submission. The pipeline uses three forward-facing nuScenes cameras, GPT-4o pre-labels, automatic checks, and human review. The study describes **850 scenes**, **34,149 keyframes**, **21 evaluated ODD attributes**, and **6,948 validated traffic signs**.
+Research code for the IEEE IV 2027 submission. 
+## Pipeline
+
+The nuScenes-ODD pipeline combines vision-language model (VLM) annotation generation, automated quality control, and human verification to produce structured Operational Design Domain (ODD) annotations. The resulting annotations support dataset analysis and condition-aware perception evaluation.
+
+```mermaid
+flowchart LR
+    NUSC["nuScenes Dataset"]
+    VLM["VLM Annotation Generation"]
+    V0["V0: Raw Predictions"]
+    V1["V1: Canonicalization"]
+    V2["V2: Consistency Checks"]
+    HUMAN["Human Verification"]
+    V3["V3: Final ODD Annotations"]
+    EVAL["Annotation Agreement Evaluation"]
+    SLICE["ODD-Sliced Perception Evaluation"]
+
+    NUSC --> VLM --> V0 --> V1 --> V2 --> HUMAN --> V3
+
+    V0 --> EVAL
+    V1 --> EVAL
+    V2 --> EVAL
+    V3 --> EVAL
+
+    V3 --> SLICE
+
+    classDef input fill:#EAF2F6,stroke:#326984,color:#253440
+    classDef process fill:#F5F7F8,stroke:#65737D,color:#253440
+    classDef human fill:#F9F1E8,stroke:#A67443,color:#253440
+    classDef output fill:#EBF5F2,stroke:#387C75,color:#253440
+
+    class NUSC input
+    class VLM,V0,V1,V2 process
+    class HUMAN human
+    class V3,EVAL,SLICE output
+```
+
+### Main Components
+
+1. **VLM Annotation Generation:** Generate ODD descriptions from nuScenes camera images using GPT-4o.
+2. **Canonicalization (V0 → V1):** Standardize attribute names, categorical values, and annotation formats.
+3. **Consistency Checks (V1 → V2):** Apply temporal continuity and cross-attribute semantic rules to correct inconsistencies and flag uncertain annotations.
+4. **Human Verification (V2 → V3):** Review and validate annotations to produce the final quality-controlled ODD dataset.
+5. **Annotation Agreement Evaluation:** Measure agreement between annotation stages and manually verified reference labels.
+6. **ODD-Sliced Perception Evaluation:** Evaluate object detection performance across ODD-defined conditions using the final annotations.
 
 ## What's included
 
